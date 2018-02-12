@@ -1,15 +1,98 @@
 # Release Notes for 5.4.x
 
-## [Unreleased]
+## v5.4.36 (2017-08-30)
+
+### Added
+- Added MP3 to `Testing/MimeType::$mimes` ([#20745](https://github.com/laravel/framework/pull/20745))
+
+### Changed
+- Mailables that defined a `$delay` property will honor it ([#20717](https://github.com/laravel/framework/pull/20717))
+
+### Fixed
+- Fixed route URLs building from artisan commands ([#20788](https://github.com/laravel/framework/pull/20788))
+
+
+## v5.4.35 (2017-08-24)
+
+### Fixed
+- Fixed breaking change in `FactoryBuilder` ([#20727](https://github.com/laravel/framework/pull/20727))
+
+
+## v5.4.34 (2017-08-23)
+
+### Added
+- Added `Str::start()` and `str_start()` helper ([#20569](https://github.com/laravel/framework/pull/20569))
+- Added `orDoesntHave()` and `orWhereDoesntHave()` to `QueriesRelationships` ([#20685](https://github.com/laravel/framework/pull/20685))
+- Added support for callables in model factory attributes ([#20692](https://github.com/laravel/framework/pull/20692))
+
+### Changed
+- Return the model instance from `Model::refresh()` ([#20657](https://github.com/laravel/framework/pull/20657))
+- Use `self::$verbs` in `Router::any()` ([#20698](https://github.com/laravel/framework/pull/20698))
+
+### Fixed
+- Fixed duplicate user model import in `make:policy` ([#20645](https://github.com/laravel/framework/pull/20645), [48f5f23](https://github.com/laravel/framework/commit/48f5f23fd8615f48f2aee27a301c1f2f1505bdfb))
+- Fixed PHP 7.2 incompatibility in `Builder::mergeWheres()` ([#20635](https://github.com/laravel/framework/pull/20635))
+- Fixed issue in `RateLimiter` ([#20684](https://github.com/laravel/framework/pull/20684))
+- Fixed success message after password reset ([#20707](https://github.com/laravel/framework/pull/20707))
+- Fail job only if it didn't fail already ([#20654](https://github.com/laravel/framework/pull/20654))
+
+
+## v5.4.33 (2017-08-14)
+
+### Added
+- Show error message if a reverted migration is not found ([#20499](https://github.com/laravel/framework/pull/20499), [a895b1e](https://github.com/laravel/framework/commit/a895b1eb0e50683c4583c24bb17b3f8d9e8127ab))
+
+### Changed
+- Moved `tap()` method from `Builder` to `BuildsQueries` ([#20384](https://github.com/laravel/framework/pull/20384))
+- Made Blade `or` operator case-insensitive ([#20425](https://github.com/laravel/framework/pull/20425))
+- Support `$amount = 0` in `Arr::random()` ([#20439](https://github.com/laravel/framework/pull/20439))
+- Reverted `doctrine/inflector` version change made in v5.4.31 ([#20227](https://github.com/laravel/framework/pull/20227))
+
+### Fixed
+- Fixed bug when using empty values in `SQLiteGrammar::compileInsert()` ([#20424](https://github.com/laravel/framework/pull/20424))
+- Fixed `$boolean` parameter being ignored in `Builder::addArrayOfWheres()` ([#20553](https://github.com/laravel/framework/pull/20553))
+- Fixed `JoinClause::whereIn()` when using a subquery ([#20453](https://github.com/laravel/framework/pull/20453))
+- Reset day parameter when using `Y-m` with `date_format` rule ([#20566](https://github.com/laravel/framework/pull/20566))
+
+
+## v5.4.32 (2017-08-03)
+
+### Added
+- Added `FilesystemAdapter::path()` method  ([#20395](https://github.com/laravel/framework/pull/20395))
+
+### Changed
+- Allow `Collection::random()` to return `0` items ([#20396](https://github.com/laravel/framework/pull/20396), [#20402](https://github.com/laravel/framework/pull/20402))
+- Accept options on `FilesystemAdapter::temporaryUrl()` ([#20394](https://github.com/laravel/framework/pull/20394))
+- Sync `withoutOverlapping` method on `Event` and `CallbackEvent` ([#20389](https://github.com/laravel/framework/pull/20389))
+- Prevent PHP file uploads by default unless explicitly allowed ([#20392](https://github.com/laravel/framework/pull/20392), [#20400](https://github.com/laravel/framework/pull/20400))
+- Allow other filesystem adapter to implement `temporaryUrl()` ([#20398](https://github.com/laravel/framework/pull/20398))
+
+### Fixed
+- Reverted breaking change on `BelongsToMany::create()` ([#20407](https://github.com/laravel/framework/pull/20407))
+
+
+## v5.4.31 (2017-08-02)
+
+### Added
+- Added `Blueprint::unsignedDecimal()` method ([#20243](https://github.com/laravel/framework/pull/20243), [3b4483d](https://github.com/laravel/framework/commit/3b4483d1ad885ca0943558b896c6f27f937c193a), [06dcaaa](https://github.com/laravel/framework/commit/06dcaaafe3add4a1bd2a41610278fc7f3d8c43df))
+- Added `Relation::getMorphedModel()` method ([#20244](https://github.com/laravel/framework/pull/20244))
+- Added `Model::isNot()` method ([#20354](https://github.com/laravel/framework/pull/20354))
+- Added `FilesystemAdapter::temporaryUrl()` method ([#20375](https://github.com/laravel/framework/pull/20375), [09cfd7f](https://github.com/laravel/framework/commit/09cfd7f5d2982f4faca915125d88eb4552ca3db4))
+- Added `Request::userAgent()` method ([#20367](https://github.com/laravel/framework/pull/20367))
 
 ### Changed
 - Renamed `MakeAuthCommand` to `AuthMakeCommand` ([#20216](https://github.com/laravel/framework/pull/20216))
 - Don't use `asset()` helper inside `mix()` ([#20197](https://github.com/laravel/framework/pull/20197))
+- Removed `array` type-hint in `Builder::orWhereRaw()` signature ([#20234](https://github.com/laravel/framework/pull/20234))
+- Added empty array default to `$attributes` on `BelongsToMany::create()` ([#20321](https://github.com/laravel/framework/pull/20321))
+- Prepare for PHP 7.2 ([#20258](https://github.com/laravel/framework/pull/20258), [#20330](https://github.com/laravel/framework/pull/20330), [#20336](https://github.com/laravel/framework/pull/20336), [#20378](https://github.com/laravel/framework/pull/20378))
+- Use `unsignedTinyInteger()` in `jobs.stub` ([#20382](https://github.com/laravel/framework/pull/20382))
 
 ### Fixed
 - Make sure `Model::getDates()` returns unique columns ([#20193](https://github.com/laravel/framework/pull/20193))
 - Fixed pulled `doctrine/inflector` version ([#20227](https://github.com/laravel/framework/pull/20227))
 - Fixed issue with `chunkById()` when `orderByRaw()` is used ([#20236](https://github.com/laravel/framework/pull/20236))
+- Terminate user defined database connections after rollback during testing ([#20340](https://github.com/laravel/framework/pull/20340))
 
 
 ## v5.4.30 (2017-07-19)
