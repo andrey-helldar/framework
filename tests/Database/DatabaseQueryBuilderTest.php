@@ -293,6 +293,13 @@ class DatabaseQueryBuilderTest extends TestCase
         $this->assertEquals('select * from `users` where year(`created_at`) = ?', $builder->toSql());
     }
 
+    public function testDateBasedWheresExpressionIsNotBound()
+    {
+        $builder = $this->getBuilder();
+        $builder->select('*')->from('users')->whereDate('created_at', new Raw('NOW()'))->where('admin', true);
+        $this->assertEquals([true], $builder->getBindings());
+    }
+
     public function testWhereDayMySql()
     {
         $builder = $this->getMySqlBuilder();
@@ -1261,6 +1268,11 @@ class DatabaseQueryBuilderTest extends TestCase
         $this->assertTrue($results);
 
         $builder = $this->getBuilder();
+        $builder->getConnection()->shouldReceive('select')->once()->with('select exists(select * from "users") as "exists"', [], true)->andReturn([['exists' => 0]]);
+        $results = $builder->from('users')->doesntExist();
+        $this->assertTrue($results);
+
+        $builder = $this->getBuilder();
         $builder->getConnection()->shouldReceive('select')->once()->with('select max("id") as aggregate from "users"', [], true)->andReturn([['aggregate' => 1]]);
         $builder->getProcessor()->shouldReceive('processSelect')->once()->andReturnUsing(function ($builder, $results) {
             return $results;
@@ -1676,13 +1688,31 @@ class DatabaseQueryBuilderTest extends TestCase
         $connection->expects($this->once())
                     ->method('update')
                     ->with(
-                        'update `users` set `name` = json_set(`name`, "$.first_name", ?), `name` = json_set(`name`, "$.last_name", ?) where `active` = ?',
+                        'update `users` set `name` = json_set(`name`, \'$."first_name"\', ?), `name` = json_set(`name`, \'$."last_name"\', ?) where `active` = ?',
                         ['John', 'Doe', 1]
                     );
 
         $builder = new Builder($connection, $grammar, $processor);
 
         $result = $builder->from('users')->where('active', '=', 1)->update(['name->first_name' => 'John', 'name->last_name' => 'Doe']);
+    }
+
+    public function testMySqlUpdateWrappingNestedJson()
+    {
+        $grammar = new \Illuminate\Database\Query\Grammars\MySqlGrammar;
+        $processor = m::mock('Illuminate\Database\Query\Processors\Processor');
+
+        $connection = $this->createMock('Illuminate\Database\ConnectionInterface');
+        $connection->expects($this->once())
+                    ->method('update')
+                    ->with(
+                        'update `users` set `meta` = json_set(`meta`, \'$."name"."first_name"\', ?), `meta` = json_set(`meta`, \'$."name"."last_name"\', ?) where `active` = ?',
+                        ['John', 'Doe', 1]
+                    );
+
+        $builder = new Builder($connection, $grammar, $processor);
+
+        $result = $builder->from('users')->where('active', '=', 1)->update(['meta->name->first_name' => 'John', 'meta->name->last_name' => 'Doe']);
     }
 
     public function testMySqlUpdateWithJsonRemovesBindingsCorrectly()
@@ -1694,7 +1724,7 @@ class DatabaseQueryBuilderTest extends TestCase
         $connection->shouldReceive('update')
                     ->once()
                     ->with(
-                        'update `users` set `options` = json_set(`options`, "$.enable", false), `updated_at` = ? where `id` = ?',
+                        'update `users` set `options` = json_set(`options`, \'$."enable"\', false), `updated_at` = ? where `id` = ?',
                         ['2015-05-26 22:02:06', 0]
                     );
         $builder = new Builder($connection, $grammar, $processor);
@@ -1703,7 +1733,7 @@ class DatabaseQueryBuilderTest extends TestCase
         $connection->shouldReceive('update')
             ->once()
             ->with(
-                'update `users` set `options` = json_set(`options`, "$.size", 45), `updated_at` = ? where `id` = ?',
+                'update `users` set `options` = json_set(`options`, \'$."size"\', 45), `updated_at` = ? where `id` = ?',
                 ['2015-05-26 22:02:06', 0]
             );
         $builder = new Builder($connection, $grammar, $processor);
@@ -1750,8 +1780,8 @@ class DatabaseQueryBuilderTest extends TestCase
     public function testMySqlWrappingJson()
     {
         $builder = $this->getMySqlBuilder();
-        $builder->select('*')->from('users')->whereRaw('items->"$.price" = 1');
-        $this->assertEquals('select * from `users` where items->"$.price" = 1', $builder->toSql());
+        $builder->select('*')->from('users')->whereRaw('items->\'$."price"\' = 1');
+        $this->assertEquals('select * from `users` where items->\'$."price"\' = 1', $builder->toSql());
 
         $builder = $this->getMySqlBuilder();
         $builder->select('items->price')->from('users')->where('items->price', '=', 1)->orderBy('items->price');
@@ -2272,7 +2302,7 @@ class DatabaseQueryBuilderTest extends TestCase
         $builder->shouldReceive('forPage')->once()->with($page, $perPage)->andReturnSelf();
         $builder->shouldReceive('get')->once()->andReturn($results);
 
-        Paginator::currentPageResolver(function () use ($path) {
+        Paginator::currentPageResolver(function () {
             return 1;
         });
 
@@ -2303,7 +2333,7 @@ class DatabaseQueryBuilderTest extends TestCase
         $builder->shouldNotReceive('forPage');
         $builder->shouldNotReceive('get');
 
-        Paginator::currentPageResolver(function () use ($path) {
+        Paginator::currentPageResolver(function () {
             return 1;
         });
 

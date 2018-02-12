@@ -3,31 +3,18 @@
 namespace Illuminate\Tests\Integration\Database\EloquentBelongsToManyTest;
 
 use Illuminate\Support\Carbon;
-use Orchestra\Testbench\TestCase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Tests\Integration\Database\DatabaseTestCase;
 
 /**
  * @group integration
  */
-class EloquentBelongsToManyTest extends TestCase
+class EloquentBelongsToManyTest extends DatabaseTestCase
 {
-    protected function getEnvironmentSetUp($app)
-    {
-        $app['config']->set('app.debug', 'true');
-
-        $app['config']->set('database.default', 'testbench');
-
-        $app['config']->set('database.connections.testbench', [
-            'driver' => 'sqlite',
-            'database' => ':memory:',
-            'prefix' => '',
-        ]);
-    }
-
     public function setUp()
     {
         parent::setUp();
@@ -99,6 +86,37 @@ class EloquentBelongsToManyTest extends TestCase
     /**
      * @test
      */
+    public function refresh_on_other_model_works()
+    {
+        $post = Post::create(['title' => str_random()]);
+        $tag = Tag::create(['name' => $tagName = str_random()]);
+
+        $post->tags()->sync([
+            $tag->id,
+        ]);
+
+        $post->load('tags');
+
+        $loadedTag = $post->tags()->first();
+
+        $tag->update(['name' => 'newName']);
+
+        $this->assertEquals($tagName, $loadedTag->name);
+
+        $this->assertEquals($tagName, $post->tags[0]->name);
+
+        $loadedTag->refresh();
+
+        $this->assertEquals('newName', $loadedTag->name);
+
+        $post->refresh();
+
+        $this->assertEquals('newName', $post->tags[0]->name);
+    }
+
+    /**
+     * @test
+     */
     public function custom_pivot_class()
     {
         Carbon::setTestNow(
@@ -111,14 +129,20 @@ class EloquentBelongsToManyTest extends TestCase
 
         $post->tagsWithCustomPivot()->attach($tag->id);
 
-        $post->tagsWithCustomAccessor()->attach($tag->id);
-
         $this->assertInstanceOf(CustomPivot::class, $post->tagsWithCustomPivot[0]->pivot);
 
         $this->assertEquals([
             'post_id' => '1',
             'tag_id' => '1',
         ], $post->tagsWithCustomAccessor[0]->tag->toArray());
+
+        $pivot = $post->tagsWithCustomPivot[0]->pivot;
+        $pivot->tag_id = 2;
+        $pivot->save();
+
+        $this->assertEquals(1, CustomPivot::count());
+        $this->assertEquals(1, CustomPivot::first()->post_id);
+        $this->assertEquals(2, CustomPivot::first()->tag_id);
     }
 
     /**
@@ -636,4 +660,5 @@ class TagWithCustomPivot extends Model
 
 class CustomPivot extends Pivot
 {
+    protected $table = 'posts_tags';
 }
