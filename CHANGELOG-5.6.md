@@ -1,5 +1,69 @@
 # Release Notes for 5.6.x
 
+## v5.6.21 (2018-05-08)
+
+### Added
+- Added `FilesystemManager::forgetDisk()` method ([#24057](https://github.com/laravel/framework/pull/24057), [cbfb4fb](https://github.com/laravel/framework/commit/cbfb4fbf0784ac5eb08ce2effe8727f3428d5812))
+- Added `--allow` parameter to `down` command ([#24003](https://github.com/laravel/framework/pull/24003))
+- Added more comparison validation rules (`gt`, `lt`, `gte`, `lte`) ([#24091](https://github.com/laravel/framework/pull/24091), [#24135](https://github.com/laravel/framework/pull/24135))
+- Added `TestResponse::assertCookieNotExpired()` method ([#24119](https://github.com/laravel/framework/pull/24119))
+
+### Changed
+- Redis connections now implement the `Contracts/Redis/Connection` interface ([#24142](https://github.com/laravel/framework/pull/24142))
+
+### Fixed
+- Fixed unsetting request parameters during `HEAD` requests ([#24092](https://github.com/laravel/framework/pull/24092))
+- Fixed `HasManyThrough` returning incorrect results with `chunk()` ([#24096](https://github.com/laravel/framework/pull/24096), [5d3d98a](https://github.com/laravel/framework/commit/5d3d98a8c620458b9c1f80fbcefa1d88f9490784))
+- Fixed `dateBasedWhere()` with raw expressions when using SQLite ([#24102](https://github.com/laravel/framework/pull/24102))
+- Fixed `whereYear()` not accepting integers when using SQLite ([#24115](https://github.com/laravel/framework/pull/24115))
+- Remove full base URL from generated paths ([#24101](https://github.com/laravel/framework/pull/24101))
+
+
+## v5.6.20 (2018-05-02)
+
+### Added
+- Support passing `Response` and `Responsable` to `abort()` ([4e29889](https://github.com/laravel/framework/commit/4e298893c746734de7049cc69483ce252f6d93c8))
+- Added `pingBeforeIf` and `thenPingIf` methods to task scheduler ([#24077](https://github.com/laravel/framework/pull/24077), [1bf54d2](https://github.com/laravel/framework/commit/1bf54d23b5d2207d7c60a549584c774f9ff8386b))
+- Added `withDefault()` support to `MorphTo` relationships ([#24061](https://github.com/laravel/framework/pull/24061))
+
+### Fixed
+- Fixed URL generator when request has base path ([#24074](https://github.com/laravel/framework/pull/24074))
+
+
+## v5.6.19 (2018-04-30)
+
+### Added
+- Added support for custom SparkPost endpoint ([#23910](https://github.com/laravel/framework/pull/23910))
+- Added `Optional::__isset()` handling ([#24042](https://github.com/laravel/framework/pull/24042))
+- Added support for multiple cc, bcc and reply-to recipients on mail notifications ([#23760](https://github.com/laravel/framework/pull/23760))
+
+### Fixed
+- Accept only two arguments on `orWhereDate()` ([#24043](https://github.com/laravel/framework/pull/24043))
+- Fixed relative route URL generation when using custom host formatter ([#24051](https://github.com/laravel/framework/pull/24051))
+
+
+## v5.6.18 (2018-04-26)
+
+### Added
+- Added support for MySQL 8 ([#23948](https://github.com/laravel/framework/pull/23948))
+- Added support for custom filesystem drivers URLs ([#23964](https://github.com/laravel/framework/pull/23964))
+- Added more PostgreSQL operators ([#23945](https://github.com/laravel/framework/pull/23945))
+- Added support for JSONP callback when broadcasting using Pusher ([#24018](https://github.com/laravel/framework/pull/24018), [b9ab427](https://github.com/laravel/framework/commit/b9ab4272192d079539c32787d66a35a31a7815ce))
+
+### Changed
+- Support chaining using `$this->be()` helper ([#23919](https://github.com/laravel/framework/pull/23919))
+- Improved pagination accessibility ([#23962](https://github.com/laravel/framework/pull/23962))
+- Changed response code of `ValidationException` in `ThrottlesLogins` to `429` ([#24002](https://github.com/laravel/framework/pull/24002))
+- Throw exception if called command doesn't exist ([#23942](https://github.com/laravel/framework/pull/23942))
+- Made notification email translatable ([#23903](https://github.com/laravel/framework/pull/23903))
+
+### Fixed
+- Fixed saving timestamp columns on pivots without parent ([#23917](https://github.com/laravel/framework/pull/23917))
+- Quote collation names in MySQL migrations ([#23989](https://github.com/laravel/framework/pull/23989))
+- Fixed sending plain-text only emails ([#23981](https://github.com/laravel/framework/pull/23981))
+- Fixed counting the number of jobs on `Queue::fake()` ([#23933](https://github.com/laravel/framework/pull/23933))
+
+
 ## v5.6.17 (2018-04-17)
 
 ### Added

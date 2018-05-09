@@ -289,8 +289,27 @@ class DatabaseQueryBuilderTest extends TestCase
         $this->assertEquals('select * from `users` where month(`created_at`) = ?', $builder->toSql());
 
         $builder = $this->getMySqlBuilder();
-        $builder->select('*')->from('users')->whereyear('created_at', 1);
+        $builder->select('*')->from('users')->whereYear('created_at', 1);
         $this->assertEquals('select * from `users` where year(`created_at`) = ?', $builder->toSql());
+    }
+
+    public function testDateBasedOrWheresAcceptsTwoArguments()
+    {
+        $builder = $this->getMySqlBuilder();
+        $builder->select('*')->from('users')->where('id', 1)->orWhereDate('created_at', 1);
+        $this->assertEquals('select * from `users` where `id` = ? or date(`created_at`) = ?', $builder->toSql());
+
+        $builder = $this->getMySqlBuilder();
+        $builder->select('*')->from('users')->where('id', 1)->orWhereDay('created_at', 1);
+        $this->assertEquals('select * from `users` where `id` = ? or day(`created_at`) = ?', $builder->toSql());
+
+        $builder = $this->getMySqlBuilder();
+        $builder->select('*')->from('users')->where('id', 1)->orWhereMonth('created_at', 1);
+        $this->assertEquals('select * from `users` where `id` = ? or month(`created_at`) = ?', $builder->toSql());
+
+        $builder = $this->getMySqlBuilder();
+        $builder->select('*')->from('users')->where('id', 1)->orWhereyear('created_at', 1);
+        $this->assertEquals('select * from `users` where `id` = ? or year(`created_at`) = ?', $builder->toSql());
     }
 
     public function testDateBasedWheresExpressionIsNotBound()
@@ -298,6 +317,18 @@ class DatabaseQueryBuilderTest extends TestCase
         $builder = $this->getBuilder();
         $builder->select('*')->from('users')->whereDate('created_at', new Raw('NOW()'))->where('admin', true);
         $this->assertEquals([true], $builder->getBindings());
+    }
+
+    public function testWhereDateMySql()
+    {
+        $builder = $this->getMySqlBuilder();
+        $builder->select('*')->from('users')->whereDate('created_at', '=', '2015-12-21');
+        $this->assertEquals('select * from `users` where date(`created_at`) = ?', $builder->toSql());
+        $this->assertEquals([0 => '2015-12-21'], $builder->getBindings());
+
+        $builder = $this->getMySqlBuilder();
+        $builder->select('*')->from('users')->whereDate('created_at', '=', new Raw('NOW()'));
+        $this->assertEquals('select * from `users` where date(`created_at`) = NOW()', $builder->toSql());
     }
 
     public function testWhereDayMySql()
@@ -378,6 +409,10 @@ class DatabaseQueryBuilderTest extends TestCase
         $builder->select('*')->from('users')->whereDate('created_at', '=', '2015-12-21');
         $this->assertEquals('select * from "users" where "created_at"::date = ?', $builder->toSql());
         $this->assertEquals([0 => '2015-12-21'], $builder->getBindings());
+
+        $builder = $this->getPostgresBuilder();
+        $builder->select('*')->from('users')->whereDate('created_at', new Raw('NOW()'));
+        $this->assertEquals('select * from "users" where "created_at"::date = NOW()', $builder->toSql());
     }
 
     public function testWhereDayPostgres()
@@ -412,11 +447,23 @@ class DatabaseQueryBuilderTest extends TestCase
         $this->assertEquals([0 => '22:00'], $builder->getBindings());
     }
 
+    public function testWhereDateSqlite()
+    {
+        $builder = $this->getSQLiteBuilder();
+        $builder->select('*')->from('users')->whereDate('created_at', '=', '2015-12-21');
+        $this->assertEquals('select * from "users" where strftime(\'%Y-%m-%d\', "created_at") = cast(? as text)', $builder->toSql());
+        $this->assertEquals([0 => '2015-12-21'], $builder->getBindings());
+
+        $builder = $this->getSQLiteBuilder();
+        $builder->select('*')->from('users')->whereDate('created_at', new Raw('NOW()'));
+        $this->assertEquals('select * from "users" where strftime(\'%Y-%m-%d\', "created_at") = cast(NOW() as text)', $builder->toSql());
+    }
+
     public function testWhereDaySqlite()
     {
         $builder = $this->getSQLiteBuilder();
         $builder->select('*')->from('users')->whereDay('created_at', '=', 1);
-        $this->assertEquals('select * from "users" where strftime(\'%d\', "created_at") = ?', $builder->toSql());
+        $this->assertEquals('select * from "users" where strftime(\'%d\', "created_at") = cast(? as text)', $builder->toSql());
         $this->assertEquals([0 => 1], $builder->getBindings());
     }
 
@@ -424,7 +471,7 @@ class DatabaseQueryBuilderTest extends TestCase
     {
         $builder = $this->getSQLiteBuilder();
         $builder->select('*')->from('users')->whereMonth('created_at', '=', 5);
-        $this->assertEquals('select * from "users" where strftime(\'%m\', "created_at") = ?', $builder->toSql());
+        $this->assertEquals('select * from "users" where strftime(\'%m\', "created_at") = cast(? as text)', $builder->toSql());
         $this->assertEquals([0 => 5], $builder->getBindings());
     }
 
@@ -432,7 +479,7 @@ class DatabaseQueryBuilderTest extends TestCase
     {
         $builder = $this->getSQLiteBuilder();
         $builder->select('*')->from('users')->whereYear('created_at', '=', 2014);
-        $this->assertEquals('select * from "users" where strftime(\'%Y\', "created_at") = ?', $builder->toSql());
+        $this->assertEquals('select * from "users" where strftime(\'%Y\', "created_at") = cast(? as text)', $builder->toSql());
         $this->assertEquals([0 => 2014], $builder->getBindings());
     }
 
@@ -440,7 +487,7 @@ class DatabaseQueryBuilderTest extends TestCase
     {
         $builder = $this->getSQLiteBuilder();
         $builder->select('*')->from('users')->whereTime('created_at', '>=', '22:00');
-        $this->assertEquals('select * from "users" where strftime(\'%H:%M:%S\', "created_at") >= ?', $builder->toSql());
+        $this->assertEquals('select * from "users" where strftime(\'%H:%M:%S\', "created_at") >= cast(? as text)', $builder->toSql());
         $this->assertEquals([0 => '22:00'], $builder->getBindings());
     }
 
@@ -448,8 +495,20 @@ class DatabaseQueryBuilderTest extends TestCase
     {
         $builder = $this->getSQLiteBuilder();
         $builder->select('*')->from('users')->whereTime('created_at', '22:00');
-        $this->assertEquals('select * from "users" where strftime(\'%H:%M:%S\', "created_at") = ?', $builder->toSql());
+        $this->assertEquals('select * from "users" where strftime(\'%H:%M:%S\', "created_at") = cast(? as text)', $builder->toSql());
         $this->assertEquals([0 => '22:00'], $builder->getBindings());
+    }
+
+    public function testWhereDateSqlServer()
+    {
+        $builder = $this->getSqlServerBuilder();
+        $builder->select('*')->from('users')->whereDate('created_at', '=', '2015-12-21');
+        $this->assertEquals('select * from [users] where cast([created_at] as date) = ?', $builder->toSql());
+        $this->assertEquals([0 => '2015-12-21'], $builder->getBindings());
+
+        $builder = $this->getSqlServerBuilder();
+        $builder->select('*')->from('users')->whereDate('created_at', new Raw('NOW()'));
+        $this->assertEquals('select * from [users] where cast([created_at] as date) = NOW()', $builder->toSql());
     }
 
     public function testWhereDaySqlServer()
