@@ -141,6 +141,9 @@ class HttpRequestTest extends TestCase
 
         $request = Request::create('http://foo.com/foo/bar/?name=taylor', 'GET');
         $this->assertEquals('http://foo.com/foo/bar?name=graham', $request->fullUrlWithQuery(['name' => 'graham']));
+
+        $request = Request::create('https://foo.com', 'GET');
+        $this->assertEquals('https://foo.com/?key=value%20with%20spaces', $request->fullUrlWithQuery(['key' => 'value with spaces']));
     }
 
     public function testIsMethod()
@@ -527,6 +530,13 @@ class HttpRequestTest extends TestCase
         $request->replace($replace);
         $this->assertNull($request->input('name'));
         $this->assertEquals('Dayle', $request->input('buddy'));
+    }
+
+    public function testOffsetUnsetMethod()
+    {
+        $request = Request::create('/', 'HEAD', ['name' => 'Taylor']);
+        $request->offsetUnset('name');
+        $this->assertNull($request->input('name'));
     }
 
     public function testHeaderMethod()
