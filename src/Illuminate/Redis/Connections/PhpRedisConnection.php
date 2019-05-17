@@ -4,11 +4,12 @@ namespace Illuminate\Redis\Connections;
 
 use Redis;
 use Closure;
+use Illuminate\Contracts\Redis\Connection as ConnectionContract;
 
 /**
  * @mixin \Redis
  */
-class PhpRedisConnection extends Connection
+class PhpRedisConnection extends Connection implements ConnectionContract
 {
     /**
      * Create a new PhpRedis connection.
@@ -44,7 +45,7 @@ class PhpRedisConnection extends Connection
     {
         return array_map(function ($value) {
             return $value !== false ? $value : null;
-        }, $this->command('mget', $keys));
+        }, $this->command('mget', [$keys]));
     }
 
     /**
@@ -102,7 +103,7 @@ class PhpRedisConnection extends Connection
      */
     public function hmget($key, ...$dictionary)
     {
-        if (count($dictionary) == 1) {
+        if (count($dictionary) === 1) {
             $dictionary = $dictionary[0];
         }
 
@@ -118,7 +119,7 @@ class PhpRedisConnection extends Connection
      */
     public function hmset($key, ...$dictionary)
     {
-        if (count($dictionary) == 1) {
+        if (count($dictionary) === 1) {
             $dictionary = $dictionary[0];
         } else {
             $input = collect($dictionary);
@@ -291,7 +292,7 @@ class PhpRedisConnection extends Connection
     /**
      * Execute commands in a pipeline.
      *
-     * @param  callable  $callback
+     * @param  callable|null  $callback
      * @return \Redis|array
      */
     public function pipeline(callable $callback = null)
@@ -306,7 +307,7 @@ class PhpRedisConnection extends Connection
     /**
      * Execute commands in a transaction.
      *
-     * @param  callable  $callback
+     * @param  callable|null  $callback
      * @return \Redis|array
      */
     public function transaction(callable $callback = null)
@@ -334,7 +335,7 @@ class PhpRedisConnection extends Connection
     }
 
     /**
-     * Evaluate a script and retunr its result.
+     * Evaluate a script and return its result.
      *
      * @param  string  $script
      * @param  int  $numberOfKeys
