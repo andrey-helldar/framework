@@ -7,8 +7,9 @@ interface Castable
     /**
      * Get a given attribute from the model.
      *
-     * @param  string  $key
-     * @param  mixed  $value
+     * @param string $key
+     * @param mixed $value
+     *
      * @return mixed
      */
     public function fromDatabase($key, $value = null);
@@ -16,9 +17,17 @@ interface Castable
     /**
      * Set a given attribute on the model.
      *
-     * @param  string  $key
-     * @param  mixed  $value
+     * @param string $key
+     * @param mixed $value
+     *
      * @return mixed
      */
     public function toDatabase($key, $value = null);
+
+    /**
+     * Getting the column type in the database.
+     *
+     * @return mixed
+     */
+    public function getKeyType();
 }
