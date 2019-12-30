@@ -148,7 +148,7 @@ class Arr
             return $array->offsetExists($key);
         }
 
-        return array_key_exists($key, $array);
+        return isset($array[$key]);
     }
 
     /**

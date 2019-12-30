@@ -51,7 +51,7 @@ class ImplicitRouteBinding
      */
     protected static function getParameterName($name, $parameters)
     {
-        if (array_key_exists($name, $parameters)) {
+        if (isset($parameters[$name])) {
             return $name;
         }
 

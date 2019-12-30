@@ -596,7 +596,7 @@ trait ValidatesAttributes
             return $this->extractDistinctValues($attributeName);
         }
 
-        if (! array_key_exists($attributeName, $this->distinctValues)) {
+        if (! isset($this->distinctValues[$attributeName])) {
             $this->distinctValues[$attributeName] = $this->extractDistinctValues($attributeName);
         }
 

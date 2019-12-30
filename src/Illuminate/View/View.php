@@ -310,7 +310,7 @@ class View implements ArrayAccess, Htmlable, ViewContract
      */
     public function offsetExists($key)
     {
-        return array_key_exists($key, $this->data);
+        return isset($this->data[$key]);
     }
 
     /**

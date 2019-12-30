@@ -106,7 +106,7 @@ trait SerializesModels
                 $name = "\0*\0{$name}";
             }
 
-            if (! array_key_exists($name, $values)) {
+            if (! isset($values[$name])) {
                 continue;
             }
 

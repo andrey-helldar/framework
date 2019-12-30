@@ -101,7 +101,7 @@ class DatabaseUserProvider implements UserProvider
     {
         if (empty($credentials) ||
            (count($credentials) === 1 &&
-            array_key_exists('password', $credentials))) {
+           isset($credentials['password']))) {
             return;
         }
 

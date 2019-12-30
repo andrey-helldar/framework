@@ -448,7 +448,7 @@ class Collection implements ArrayAccess, Enumerable
             foreach ($groupKeys as $groupKey) {
                 $groupKey = is_bool($groupKey) ? (int) $groupKey : $groupKey;
 
-                if (! array_key_exists($groupKey, $results)) {
+                if (! isset($results[$groupKey])) {
                     $results[$groupKey] = new static;
                 }
 
@@ -1276,7 +1276,7 @@ class Collection implements ArrayAccess, Enumerable
      */
     public function offsetExists($key)
     {
-        return array_key_exists($key, $this->items);
+        return isset($this->items[$key]);
     }
 
     /**

@@ -322,7 +322,7 @@ class UrlGenerator implements UrlGeneratorContract
     {
         $parameters = $this->formatParameters($parameters);
 
-        if (array_key_exists('signature', $parameters)) {
+        if (isset($parameters['signature'])) {
             throw new InvalidArgumentException(
                 '"Signature" is a reserved parameter when generating signed routes. Please rename your route parameter.'
             );

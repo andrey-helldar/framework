@@ -185,7 +185,7 @@ abstract class ServiceProvider
      */
     protected function ensurePublishArrayInitialized($class)
     {
-        if (! array_key_exists($class, static::$publishes)) {
+        if (! isset(static::$publishes[$class])) {
             static::$publishes[$class] = [];
         }
     }
@@ -199,7 +199,7 @@ abstract class ServiceProvider
      */
     protected function addPublishGroup($group, $paths)
     {
-        if (! array_key_exists($group, static::$publishGroups)) {
+        if (! isset(static::$publishGroups[$group])) {
             static::$publishGroups[$group] = [];
         }
 
@@ -237,9 +237,9 @@ abstract class ServiceProvider
     {
         if ($provider && $group) {
             return static::pathsForProviderAndGroup($provider, $group);
-        } elseif ($group && array_key_exists($group, static::$publishGroups)) {
+        } elseif ($group && isset(static::$publishGroups[$group])) {
             return static::$publishGroups[$group];
-        } elseif ($provider && array_key_exists($provider, static::$publishes)) {
+        } elseif ($provider && isset(static::$publishes[$provider])) {
             return static::$publishes[$provider];
         } elseif ($group || $provider) {
             return [];

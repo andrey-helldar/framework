@@ -585,8 +585,8 @@ class Validator implements ValidatorContract
 
         $data = ValidationData::initializeAndGatherData($attribute, $this->data);
 
-        return array_key_exists($attribute, $data)
-            || array_key_exists($attribute, $this->data);
+        return isset($data[$attribute])
+            || isset($this->data[$attribute]);
     }
 
     /**
@@ -655,7 +655,7 @@ class Validator implements ValidatorContract
         }
 
         if (isset($this->failedRules[$attribute]) &&
-            array_key_exists('uploaded', $this->failedRules[$attribute])) {
+            isset($this->failedRules[$attribute]['uploaded'])) {
             return true;
         }
 
@@ -824,7 +824,7 @@ class Validator implements ValidatorContract
      */
     protected function getRule($attribute, $rules)
     {
-        if (! array_key_exists($attribute, $this->rules)) {
+        if (! isset($this->rules[$attribute])) {
             return;
         }
 

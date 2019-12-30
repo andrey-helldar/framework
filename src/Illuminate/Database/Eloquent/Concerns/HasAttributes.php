@@ -148,7 +148,7 @@ trait HasAttributes
             // We want to spin through all the mutated attributes for this model and call
             // the mutator for the attribute. We cache off every mutated attributes so
             // we don't have to constantly check on attributes that actually change.
-            if (! array_key_exists($key, $attributes)) {
+            if (! isset($attributes[$key])) {
                 continue;
             }
 
@@ -173,7 +173,7 @@ trait HasAttributes
     protected function addCastAttributesToArray(array $attributes, array $mutatedAttributes)
     {
         foreach ($this->getCasts() as $key => $value) {
-            if (! array_key_exists($key, $attributes) || in_array($key, $mutatedAttributes)) {
+            if (! isset($attributes[$key]) || in_array($key, $mutatedAttributes)) {
                 continue;
             }
 
@@ -318,7 +318,7 @@ trait HasAttributes
         // If the attribute exists in the attribute array or has a "get" mutator we will
         // get the attribute's value. Otherwise, we will proceed as if the developers
         // are asking for a relationship's value. This covers both types of values.
-        if (array_key_exists($key, $this->attributes) ||
+        if (isset($this->attributes[$key]) ||
             $this->hasGetMutator($key)) {
             return $this->getAttributeValue($key);
         }
@@ -908,7 +908,7 @@ trait HasAttributes
      */
     public function hasCast($key, $types = null)
     {
-        if (array_key_exists($key, $this->getCasts())) {
+        if (isset($this->getCasts()[$key])) {
             return $types ? in_array($this->getCastType($key), (array) $types, true) : true;
         }
 
@@ -1117,7 +1117,7 @@ trait HasAttributes
         // dirty attributes. If it is, we will return true and if we make it through
         // all of the attributes for the entire array we will return false at end.
         foreach (Arr::wrap($attributes) as $attribute) {
-            if (array_key_exists($attribute, $changes)) {
+            if (isset($changes[$attribute])) {
                 return true;
             }
         }
@@ -1162,7 +1162,7 @@ trait HasAttributes
      */
     public function originalIsEquivalent($key, $current)
     {
-        if (! array_key_exists($key, $this->original)) {
+        if (! isset($this->original[$key])) {
             return false;
         }
 

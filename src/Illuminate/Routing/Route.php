@@ -331,7 +331,7 @@ class Route
     public function hasParameter($name)
     {
         if ($this->hasParameters()) {
-            return array_key_exists($name, $this->parameters());
+            return isset($this->parameters()[$name]);
         }
 
         return false;

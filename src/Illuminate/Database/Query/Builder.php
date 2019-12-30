@@ -2866,7 +2866,7 @@ class Builder
      */
     public function setBindings(array $bindings, $type = 'where')
     {
-        if (! array_key_exists($type, $this->bindings)) {
+        if (! isset($this->bindings[$type])) {
             throw new InvalidArgumentException("Invalid binding type: {$type}.");
         }
 
@@ -2886,7 +2886,7 @@ class Builder
      */
     public function addBinding($value, $type = 'where')
     {
-        if (! array_key_exists($type, $this->bindings)) {
+        if (! isset($this->bindings[$type])) {
             throw new InvalidArgumentException("Invalid binding type: {$type}.");
         }
 

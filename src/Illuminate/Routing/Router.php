@@ -846,7 +846,7 @@ class Router implements BindingRegistrar, RegistrarContract
      */
     public function hasMiddlewareGroup($name)
     {
-        return array_key_exists($name, $this->middlewareGroups);
+        return isset($this->middlewareGroups[$name]);
     }
 
     /**
@@ -902,7 +902,7 @@ class Router implements BindingRegistrar, RegistrarContract
      */
     public function pushMiddlewareToGroup($group, $middleware)
     {
-        if (! array_key_exists($group, $this->middlewareGroups)) {
+        if (! isset($this->middlewareGroups[$group])) {
             $this->middlewareGroups[$group] = [];
         }
 

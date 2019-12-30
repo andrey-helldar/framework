@@ -767,7 +767,7 @@ class TestResponse implements ArrayAccess
 
         $json = $this->json();
 
-        if (! array_key_exists($responseKey, $json)) {
+        if (! isset($json[$responseKey])) {
             PHPUnit::assertArrayNotHasKey($responseKey, $json);
 
             return $this;

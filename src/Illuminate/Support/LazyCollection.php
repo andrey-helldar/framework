@@ -124,7 +124,7 @@ class LazyCollection implements Enumerable
 
         return new static(function () use ($iterator, &$iteratorIndex, &$cache) {
             for ($index = 0; true; $index++) {
-                if (array_key_exists($index, $cache)) {
+                if (isset($cache[$index])) {
                     yield $cache[$index][0] => $cache[$index][1];
 
                     continue;
@@ -500,7 +500,7 @@ class LazyCollection implements Enumerable
         $count = count($keys);
 
         foreach ($this as $key => $value) {
-            if (array_key_exists($key, $keys) && --$count == 0) {
+            if (isset($keys[$key]) && --$count == 0) {
                 return true;
             }
         }
@@ -780,7 +780,7 @@ class LazyCollection implements Enumerable
                 $keys = array_flip($keys);
 
                 foreach ($this as $key => $value) {
-                    if (array_key_exists($key, $keys)) {
+                    if (isset($keys[$key])) {
                         yield $key => $value;
 
                         unset($keys[$key]);
@@ -853,7 +853,7 @@ class LazyCollection implements Enumerable
             $items = $this->getArrayableItems($items);
 
             foreach ($this as $key => $value) {
-                if (array_key_exists($key, $items)) {
+                if (isset($items[$key])) {
                     yield $key => $items[$key];
 
                     unset($items[$key]);

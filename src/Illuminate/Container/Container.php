@@ -884,9 +884,7 @@ class Container implements ArrayAccess, ContainerContract
      */
     protected function hasParameterOverride($dependency)
     {
-        return array_key_exists(
-            $dependency->name, $this->getLastParameterOverride()
-        );
+        return isset($this->getLastParameterOverride()[$dependency->name]);
     }
 
     /**

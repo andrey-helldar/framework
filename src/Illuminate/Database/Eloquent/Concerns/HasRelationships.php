@@ -751,7 +751,7 @@ trait HasRelationships
      */
     public function relationLoaded($key)
     {
-        return array_key_exists($key, $this->relations);
+        return isset($this->relations[$key]);
     }
 
     /**
