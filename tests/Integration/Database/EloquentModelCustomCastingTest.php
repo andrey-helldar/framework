@@ -76,7 +76,7 @@ class EloquentModelCustomCastingTest extends DatabaseTestCase
     {
         parent::setUp();
 
-        Schema::create('test_model1', function (Blueprint $table) {
+        Schema::create('test_model', function (Blueprint $table) {
             $table->increments('id');
             $table->string('field_1')->nullable();
             $table->decimal('field_2')->nullable();
@@ -90,7 +90,7 @@ class EloquentModelCustomCastingTest extends DatabaseTestCase
 
 class TestModel extends Model
 {
-    public $table = 'test_model1';
+    public $table = 'test_model';
 
     public $timestamps = false;
 
@@ -205,7 +205,7 @@ class AddressCast extends Cast implements Jsonable
         $this->line_one = $value->line_one ?? null;
         $this->line_two = $value->line_two ?? null;
 
-        return $this->toJson();
+        return $this;
     }
 
     public function toJson($options = 0)

@@ -7,6 +7,7 @@ use DateTimeInterface;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Database\Eloquent\Castable;
 use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Database\Eloquent\JsonEncodingException;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
@@ -37,9 +38,7 @@ trait HasAttributes
      *
      * @var \Illuminate\Contracts\Database\Eloquent\Castable[]
      */
-    protected static $castsCache = [];
-
-    protected static $primitiveCastObjectTypes = ['array', 'json', 'object', 'collection'];
+    protected static $castsInstancesCache = [];
 
     /**
      * The model's attributes.
@@ -1018,10 +1017,10 @@ trait HasAttributes
     {
         if ($this->isCustomCastable($key)) {
             return $this->normalizeCastToCallable($key)
-                ->fromDatabase($key, $this->castAttributeByKey($key, $value));
+                ->fromDatabase($key, $this->castAttributeByType($key, $value));
         }
 
-        return $this->castAttributeByKey($key, $value);
+        return $this->castAttributeByType($key, $value);
     }
 
     /**
@@ -1031,7 +1030,7 @@ trait HasAttributes
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
      * @return mixed
      */
-    protected function castAttributeByKey($key, $value)
+    protected function castAttributeByType($key, $value)
     {
         if (is_null($value)) {
             return $value;
@@ -1363,11 +1362,11 @@ trait HasAttributes
      */
     protected function isJsonCastable($key)
     {
-        if ($this->isCustomCastable($key) && $cast = $this->normalizeCastToCallable($key)->getKeyType()) {
-            return in_array($cast, static::$primitiveCastObjectTypes);
-        }
+        $cast = $this->getCast($key);
 
-        return $this->hasCast($key, static::$primitiveCastObjectTypes);
+        return $this->hasCast($key, ['array', 'json', 'object', 'collection']) ||
+            is_subclass_of($cast, Jsonable::class) ||
+            is_subclass_of($cast, Arrayable::class);
     }
 
     /**
@@ -1396,12 +1395,12 @@ trait HasAttributes
      */
     protected function normalizeCastToCallable($key)
     {
-        if (! isset(static::$castsCache[$key])) {
-            static::$castsCache[$key] = Container::getInstance()
+        if (! isset(static::$castsInstancesCache[$key])) {
+            static::$castsInstancesCache[$key] = Container::getInstance()
                 ->make($this->getCast($key));
         }
 
-        return static::$castsCache[$key];
+        return static::$castsInstancesCache[$key];
     }
 
     /**
