@@ -2,18 +2,17 @@
 
 namespace DummyNamespace;
 
-use Illuminate\Contracts\Database\Eloquent\Castable;
+use Illuminate\Database\Eloquent\Cast;
 
-class DummyClass implements Castable
+class DummyClass extends Cast
 {
     /**
      * Get a given attribute from the model.
      *
-     * @param  string  $key
      * @param  mixed  $value
      * @return mixed
      */
-    public function fromDatabase($key, $value = null)
+    public function fromDatabase($value = null)
     {
         return $value;
     }
@@ -21,11 +20,10 @@ class DummyClass implements Castable
     /**
      * Set a given attribute on the model.
      *
-     * @param  string  $key
      * @param  mixed  $value
      * @return mixed
      */
-    public function toDatabase($key, $value = null)
+    public function toDatabase($value = null)
     {
         return $value;
     }

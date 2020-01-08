@@ -643,6 +643,8 @@ abstract class Model implements Arrayable, ArrayAccess, Jsonable, JsonSerializab
      */
     public function save(array $options = [])
     {
+        $this->convertCustomCastableToDatabase();
+
         $query = $this->newModelQuery();
 
         // If the "saving" event returns false we'll bail out of the save and return
@@ -883,6 +885,8 @@ abstract class Model implements Arrayable, ArrayAccess, Jsonable, JsonSerializab
      */
     public function delete()
     {
+        $this->convertCustomCastableToDatabase();
+
         if (is_null($this->getKeyName())) {
             throw new Exception('No primary key defined on model.');
         }

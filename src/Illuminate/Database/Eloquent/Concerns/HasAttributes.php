@@ -7,6 +7,7 @@ use DateTimeInterface;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Database\Eloquent\Castable;
 use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Database\Eloquent\Cast;
 use Illuminate\Database\Eloquent\JsonEncodingException;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
@@ -68,6 +69,13 @@ trait HasAttributes
     protected $appends = [];
 
     /**
+     * Initialized instances of custom casts.
+     *
+     * @var \Illuminate\Contracts\Database\Eloquent\Castable[]
+     */
+    protected $customCasts = [];
+
+    /**
      * Indicates whether attributes are snake cased on arrays.
      *
      * @var bool
@@ -82,17 +90,10 @@ trait HasAttributes
     protected static $mutatorCache = [];
 
     /**
-     * Initialized instances of custom casts.
-     *
-     * @var \Illuminate\Contracts\Database\Eloquent\Castable[]
-     */
-    protected static $castsCache = [];
-
-    /**
      * Convert the model's attributes to an array.
      *
-     * @return array
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return array
      */
     public function attributesToArray()
     {
@@ -178,8 +179,8 @@ trait HasAttributes
      *
      * @param  array  $attributes
      * @param  array  $mutatedAttributes
-     * @return array
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return array
      */
     protected function addCastAttributesToArray(array $attributes, array $mutatedAttributes)
     {
@@ -318,8 +319,8 @@ trait HasAttributes
      * Get an attribute from the model.
      *
      * @param  string  $key
-     * @return mixed
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return mixed
      */
     public function getAttribute($key)
     {
@@ -331,7 +332,8 @@ trait HasAttributes
         // get the attribute's value. Otherwise, we will proceed as if the developers
         // are asking for a relationship's value. This covers both types of values.
         if (array_key_exists($key, $this->attributes) ||
-            $this->hasGetMutator($key)) {
+            $this->hasGetMutator($key) ||
+            $this->isCustomCastable($key)) {
             return $this->getAttributeValue($key);
         }
 
@@ -349,8 +351,8 @@ trait HasAttributes
      * Get a plain attribute (not a relationship).
      *
      * @param  string  $key
-     * @return mixed
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return mixed
      */
     public function getAttributeValue($key)
     {
@@ -366,7 +368,14 @@ trait HasAttributes
         // If the attribute exists within the cast array, we will convert it to
         // an appropriate native PHP type dependant upon the associated value
         // given with the key in the pair. Dayle made this comment line up.
-        if ($this->hasCast($key)) {
+        if ($this->hasCast($key) && isset($this->customCasts[$key])) {
+            return $this->normalizeCustomCast($key);
+        } elseif ($this->hasCast($key) && $this->isCustomCastable($key, $value)) {
+            $cast  = $this->normalizeCustomCast($key);
+            $value = $this->castAttribute($key, $value);
+
+            return $cast->setValue($cast->fromDatabase($value));
+        } elseif ($this->hasCast($key)) {
             return $this->castAttribute($key, $value);
         }
 
@@ -486,15 +495,32 @@ trait HasAttributes
      *
      * @param  string  $key
      * @param  mixed  $value
-     * @return mixed
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return mixed
      */
     protected function castAttribute($key, $value)
     {
-        if ($this->isCustomCastable($key)) {
-            return $this->fromCustomCastable($key, $value);
+        if (! $this->isCustomCastable($key, $value) || $this->isCustomCastableValue($value)) {
+            return $this->castAttributeByType($key, $value);
         }
 
+        $cast = $this->normalizeCustomCast($key);
+
+        return $cast->setValue(
+            $cast->fromDatabase(
+                $this->castAttributeByType($key, $value)
+            )
+        );
+    }
+
+    /**
+     * @param  string  $key
+     * @param  mixed  $value
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return mixed
+     */
+    protected function castAttributeByType($key, $value)
+    {
         if (is_null($value)) {
             return $value;
         }
@@ -515,10 +541,14 @@ trait HasAttributes
             case 'boolean':
                 return (bool) $value;
             case 'object':
-                return $this->fromJson($value, true);
+                return is_object($value)
+                    ? $value
+                    : $this->fromJson($value, true);
             case 'array':
             case 'json':
-                return $this->fromJson($value);
+                return is_array($value)
+                    ? $value
+                    : $this->fromJson($value);
             case 'collection':
                 return new BaseCollection($this->fromJson($value));
             case 'date':
@@ -537,11 +567,17 @@ trait HasAttributes
      * Get the type of cast for a model attribute.
      *
      * @param  string  $key
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
      * @return string
      */
     protected function getCastType($key)
     {
+        /** @var \Illuminate\Database\Eloquent\Cast|string $cast */
         $cast = $this->getCast($key);
+
+        if ($this->isCustomCastable($key)) {
+            return $cast::$databaseKeyType;
+        }
 
         if ($this->isCustomDateTimeCast($cast)) {
             return 'custom_datetime';
@@ -552,6 +588,34 @@ trait HasAttributes
         }
 
         return trim(strtolower($cast));
+    }
+
+    /**
+     * Is the checked key or value a custom Cast.
+     *
+     * @param  string  $key
+     * @param  mixed  $value
+     * @return bool
+     */
+    protected function isCustomCastable($key, $value = null)
+    {
+        if ($cast = $this->getCast($key)) {
+            return $this->isCustomCastableValue($cast);
+        }
+
+        return $this->isCustomCastableValue($value, false);
+    }
+
+    /**
+     * Is the checked value a custom Cast.
+     *
+     * @param  null  $value
+     * @param  bool  $allow_string
+     * @return bool
+     */
+    protected function isCustomCastableValue($value = null, $allow_string = true)
+    {
+        return is_subclass_of($value, Castable::class, $allow_string);
     }
 
     /**
@@ -578,27 +642,12 @@ trait HasAttributes
     }
 
     /**
-     * Is the checked value a custom Cast.
-     *
-     * @param  string  $key
-     * @return bool
-     */
-    protected function isCustomCastable($key)
-    {
-        if ($cast = $this->getCast($key)) {
-            return is_subclass_of($cast, Castable::class);
-        }
-
-        return false;
-    }
-
-    /**
      * Set a given attribute on the model.
      *
      * @param  string  $key
      * @param  mixed  $value
-     * @return mixed
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return mixed
      */
     public function setAttribute($key, $value)
     {
@@ -618,11 +667,9 @@ trait HasAttributes
 
         // If the attribute is specified as Cast, we will convert it according to
         // the method specified in it.
-        if ($this->isCustomCastable($key)) {
-            $value = $this->toCustomCastable($key, $value);
-        }
-
-        if ($this->isJsonCastable($key) && ! is_null($value)) {
+        if ($this->isCustomCastable($key, $value)) {
+            $value = $this->setCustomCastable($key, $value);
+        } elseif ($this->isJsonCastable($key) && ! is_null($value)) {
             $value = $this->castAttributeAsJson($key, $value);
         }
 
@@ -946,11 +993,12 @@ trait HasAttributes
      *
      * @param  string  $key
      * @param  array|string|null  $types
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
      * @return bool
      */
     public function hasCast($key, $types = null)
     {
-        if (array_key_exists($key, $this->getCasts())) {
+        if (isset($this->getCasts()[$key])) {
             return $types ? in_array($this->getCastType($key), (array) $types, true) : true;
         }
 
@@ -986,6 +1034,7 @@ trait HasAttributes
      * Determine whether a value is Date / DateTime castable for inbound manipulation.
      *
      * @param  string  $key
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
      * @return bool
      */
     protected function isDateCastable($key)
@@ -997,58 +1046,12 @@ trait HasAttributes
      * Determine whether a value is JSON castable for inbound manipulation.
      *
      * @param  string  $key
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
      * @return bool
      */
     protected function isJsonCastable($key)
     {
         return $this->hasCast($key, ['array', 'json', 'object', 'collection']);
-    }
-
-    /**
-     * Getting the execution result from a user Cast object.
-     *
-     * @param  string  $key
-     * @param  mixed  $value
-     * @return mixed
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
-     */
-    protected function fromCustomCastable($key, $value = null)
-    {
-        return $this
-            ->normalizeCastToCallable($key)
-            ->fromDatabase($key, $value);
-    }
-
-    /**
-     * Converting a value by custom Cast.
-     *
-     * @param  string  $key
-     * @param  mixed  $value
-     * @return mixed
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
-     */
-    protected function toCustomCastable($key, $value = null)
-    {
-        return $this
-            ->normalizeCastToCallable($key)
-            ->toDatabase($key, $value);
-    }
-
-    /**
-     * Getting a custom cast instance.
-     *
-     * @param  string  $key
-     * @return \Illuminate\Contracts\Database\Eloquent\Castable
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
-     */
-    protected function normalizeCastToCallable($key)
-    {
-        if (! isset(static::$castsCache[$key])) {
-            static::$castsCache[$key] = Container::getInstance()
-                ->make($this->getCast($key));
-        }
-
-        return static::$castsCache[$key];
     }
 
     /**
@@ -1095,8 +1098,8 @@ trait HasAttributes
      * Get a subset of the model's attributes.
      *
      * @param  array|mixed  $attributes
-     * @return array
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return array
      */
     public function only($attributes)
     {
@@ -1152,8 +1155,8 @@ trait HasAttributes
     /**
      * Sync the changed attributes.
      *
-     * @return $this
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return $this
      */
     public function syncChanges()
     {
@@ -1166,8 +1169,8 @@ trait HasAttributes
      * Determine if the model or any of the given attribute(s) have been modified.
      *
      * @param  array|string|null  $attributes
-     * @return bool
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return bool
      */
     public function isDirty($attributes = null)
     {
@@ -1180,8 +1183,8 @@ trait HasAttributes
      * Determine if the model and all the given attribute(s) have remained the same.
      *
      * @param  array|string|null  $attributes
-     * @return bool
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return bool
      */
     public function isClean($attributes = null)
     {
@@ -1232,8 +1235,8 @@ trait HasAttributes
     /**
      * Get the attributes that have been changed since last sync.
      *
-     * @return array
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return array
      */
     public function getDirty()
     {
@@ -1263,8 +1266,8 @@ trait HasAttributes
      *
      * @param  string  $key
      * @param  mixed  $current
-     * @return bool
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return bool
      */
     public function originalIsEquivalent($key, $current)
     {
@@ -1283,7 +1286,7 @@ trait HasAttributes
                    $this->fromDateTime($original);
         } elseif ($this->hasCast($key, ['object', 'collection'])) {
             return $this->castAttribute($key, $current) ==
-                $this->castAttribute($key, $original);
+                   $this->castAttribute($key, $original);
         } elseif ($this->hasCast($key)) {
             return $this->castAttribute($key, $current) ===
                    $this->castAttribute($key, $original);
@@ -1361,5 +1364,57 @@ trait HasAttributes
         preg_match_all('/(?<=^|;)get([^;]+?)Attribute(;|$)/', implode(';', get_class_methods($class)), $matches);
 
         return $matches[1];
+    }
+
+    /**
+     * Converting a value by custom Cast.
+     *
+     * @param  string  $key
+     * @param  mixed  $value
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return \Illuminate\Contracts\Database\Eloquent\Castable
+     */
+    protected function setCustomCastable($key, $value = null)
+    {
+        if ($this->isCustomCastableValue($value)) {
+            return $this->customCasts[$key] = $value;
+        }
+
+        $cast = $this->normalizeCustomCast($key);
+
+        return $cast->setValue($value);
+    }
+
+    /**
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     */
+    protected function convertCustomCastableToDatabase()
+    {
+        foreach ($this->getAttributes() as $key => $value) {
+            if (! $this->isCustomCastableValue($value)) {
+                continue;
+            }
+
+            $this->attributes[$key] = $this->isJsonCastable($key)
+                ? $this->castAttributeAsJson($key, $value->toDatabase($value->getValue()))
+                : $value->toDatabase($value->getValue());
+        }
+    }
+
+    /**
+     * Getting a custom cast instance.
+     *
+     * @param  string  $key
+     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return \Illuminate\Contracts\Database\Eloquent\Castable
+     */
+    protected function normalizeCustomCast($key)
+    {
+        if (! isset($this->customCasts[$key])) {
+            $this->customCasts[$key] = Container::getInstance()
+                ->make($this->getCast($key), compact('key'));
+        }
+
+        return $this->customCasts[$key];
     }
 }
