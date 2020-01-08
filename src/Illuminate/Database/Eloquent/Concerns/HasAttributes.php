@@ -253,14 +253,14 @@ trait HasAttributes
         // an appropriate native PHP type dependant upon the associated value
         // given with the key in the pair. Dayle made this comment line up.
         if ($this->hasCast($key) && isset($this->customCasts[$key])) {
-            return $this->normalizeCastToCallable($key);
-        } elseif ($this->hasCast($key)) {
-            $cast  = $this->normalizeCastToCallable($key);
+            return $this->normalizeCustomCast($key);
+        } elseif ($this->hasCast($key) && $this->isCustomCastable($key, $value)) {
+            $cast  = $this->normalizeCustomCast($key);
             $value = $this->castAttribute($key, $value);
 
-            return $this->isCustomCastable($key)
-                ? $cast->setValue($cast->fromDatabase($value))
-                : $value;
+            return $cast->setValue($cast->fromDatabase($value));
+        } elseif ($this->hasCast($key)) {
+            return $this->castAttribute($key, $value);
         }
 
         // If the attribute is listed as a date, we will convert it to a DateTime
@@ -1024,7 +1024,7 @@ trait HasAttributes
             return $this->castAttributeByType($key, $value);
         }
 
-        $cast = $this->normalizeCastToCallable($key);
+        $cast = $this->normalizeCustomCast($key);
 
         return $cast->setValue(
             $cast->fromDatabase(
@@ -1400,7 +1400,7 @@ trait HasAttributes
             return $this->customCasts[$key] = $value;
         }
 
-        $cast = $this->normalizeCastToCallable($key);
+        $cast = $this->normalizeCustomCast($key);
 
         return $cast->setValue($value);
     }
@@ -1429,7 +1429,7 @@ trait HasAttributes
      * @throws \Illuminate\Contracts\Container\BindingResolutionException
      * @return \Illuminate\Contracts\Database\Eloquent\Castable
      */
-    protected function normalizeCastToCallable($key)
+    protected function normalizeCustomCast($key)
     {
         if (! isset($this->customCasts[$key])) {
             $this->customCasts[$key] = Container::getInstance()
@@ -1442,11 +1442,6 @@ trait HasAttributes
     protected function hasAttribute($key)
     {
         return isset($this->attributes[$key]);
-    }
-
-    protected function missingAttribute($key)
-    {
-        return ! $this->hasAttribute($key);
     }
 
     /**
