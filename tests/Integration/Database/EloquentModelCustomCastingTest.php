@@ -5,7 +5,6 @@ namespace Illuminate\Tests\Integration\Database;
 use DateTime;
 use DateTimeInterface;
 use Illuminate\Contracts\Database\Eloquent\Castable;
-use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Database\Eloquent\Cast;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
@@ -13,27 +12,77 @@ use Illuminate\Support\Facades\Schema;
 
 class EloquentModelCustomCastingTest extends DatabaseTestCase
 {
-    public function testValues()
+    protected $model;
+
+    public function testStringCastable()
     {
-        $model = TestModel::create([
-            'field_1' => ['f', 'o', 'o', 'b', 'a', 'r'],
-            'field_2' => 20,
-            'field_3' => '08:19:12',
-            'field_4' => null,
-            'field_5' => null,
-        ]);
+        $arr = $this->model->toArray();
+        $this->assertInstanceOf(Castable::class, $arr['field_1']);
+        $this->assertInstanceOf(StringCast::class, $arr['field_1']);
+        $this->assertSame(['f', 'o', 'o', 'b', 'a', 'r'], $arr['field_1']->getValue());
+        $this->assertSame(['f', 'o', 'o', 'b', 'a', 'r'], $arr['field_1']->value);
 
-        $this->assertSame(['f', 'o', 'o', 'b', 'a', 'r'], $model->toArray()['field_1']);
+        $this->assertInstanceOf(Castable::class, $this->model->field_1);
+        $this->assertInstanceOf(StringCast::class, $this->model->field_1);
+        $this->assertSame(['f', 'o', 'o', 'b', 'a', 'r'], $this->model->field_1->getValue());
+        $this->assertSame(['f', 'o', 'o', 'b', 'a', 'r'], $this->model->field_1->value);
+    }
 
-        $this->assertSame(0.2, $model->toArray()['field_2']);
+    public function testNumberCastable()
+    {
+        $arr = $this->model->toArray();
+        $this->assertInstanceOf(Castable::class, $arr['field_2']);
+        $this->assertInstanceOf(NumberCast::class, $arr['field_2']);
+        $this->assertSame(0.2, $arr['field_2']->value);
 
-        $this->assertInstanceOf(DateTimeInterface::class, $model->toArray()['field_3']);
+        $this->assertInstanceOf(Castable::class, $this->model->field_2);
+        $this->assertInstanceOf(NumberCast::class, $this->model->field_2);
+        $this->assertSame(0.2, $this->model->field_2->getValue());
+        $this->assertSame(0.2, $this->model->field_2->value);
+    }
 
-        $this->assertSame('08:19:12', $model->toArray()['field_3']->format('H:i:s'));
+    public function testTimeCastable()
+    {
+        $arr = $this->model->toArray();
+        $this->assertInstanceOf(Castable::class, $arr['field_3']);
+        $this->assertInstanceOf(TimeCast::class, $arr['field_3']);
+        $this->assertInstanceOf(DateTimeInterface::class, $arr['field_3']->value);
+        $this->assertSame('08:19:12', $arr['field_3']->getValue()->format('H:i:s'));
+        $this->assertSame('08:19:12', $arr['field_3']->value->format('H:i:s'));
 
-        $this->assertSame(null, $model->toArray()['field_4']);
+        $this->assertInstanceOf(Castable::class, $this->model->field_3);
+        $this->assertInstanceOf(TimeCast::class, $this->model->field_3);
+        $this->assertInstanceOf(DateTimeInterface::class, $this->model->field_3->value);
+        $this->assertSame('08:19:12', $this->model->field_3->getValue()->format('H:i:s'));
+        $this->assertSame('08:19:12', $this->model->field_3->value->format('H:i:s'));
+    }
 
-        $this->assertSame('foo', $model->toArray()['field_5']);
+    public function testNullCastable()
+    {
+        $arr = $this->model->toArray();
+        $this->assertInstanceOf(Castable::class, $arr['field_4']);
+        $this->assertInstanceOf(NullCast::class, $arr['field_4']);
+        $this->assertSame(null, $arr['field_4']->getValue());
+        $this->assertSame(null, $arr['field_4']->value);
+
+        $this->assertInstanceOf(Castable::class, $this->model->field_4);
+        $this->assertInstanceOf(NullCast::class, $this->model->field_4);
+        $this->assertSame(null, $this->model->field_4->getValue());
+        $this->assertSame(null, $this->model->field_4->value);
+    }
+
+    public function testNullChangedCastable()
+    {
+        $arr = $this->model->toArray();
+        $this->assertInstanceOf(Castable::class, $arr['field_5']);
+        $this->assertInstanceOf(NullChangedCast::class, $arr['field_5']);
+        $this->assertSame('foo', $arr['field_5']->getValue());
+        $this->assertSame('foo', $arr['field_5']->value);
+
+        $this->assertInstanceOf(Castable::class, $this->model->field_5);
+        $this->assertInstanceOf(NullChangedCast::class, $this->model->field_5);
+        $this->assertSame('foo', $this->model->field_5->getValue());
+        $this->assertSame('foo', $this->model->field_5->value);
     }
 
     public function testChangingValueOfNestedObject()
@@ -76,6 +125,12 @@ class EloquentModelCustomCastingTest extends DatabaseTestCase
     {
         parent::setUp();
 
+        $this->migrate();
+        $this->createModel();
+    }
+
+    protected function migrate()
+    {
         Schema::create('test_model', function (Blueprint $table) {
             $table->increments('id');
             $table->string('field_1')->nullable();
@@ -85,6 +140,21 @@ class EloquentModelCustomCastingTest extends DatabaseTestCase
             $table->string('field_5')->nullable();
             $table->json('field_6')->nullable();
         });
+    }
+
+    protected function createModel()
+    {
+        $this->model = TestModel::create([
+            'field_1' => ['f', 'o', 'o', 'b', 'a', 'r'],
+            'field_2' => 20,
+            'field_3' => '08:19:12',
+            'field_4' => null,
+            'field_5' => null,
+            'field_6' => [
+                'line_one' => 'Address Line 1',
+                'line_two' => 'Address Line 2',
+            ],
+        ]);
     }
 }
 
@@ -109,18 +179,17 @@ class TestModel extends Model
 class TimeCast extends Cast
 {
     /**
-     * @param string $key
-     * @param mixed $value
+     * @param null $value
      *
      * @throws \Exception
-     * @return DateTime
+     * @return DateTimeInterface
      */
-    public function fromDatabase($key, $value = null)
+    public function fromDatabase($value = null)
     {
         return new DateTime($value);
     }
 
-    public function toDatabase($key, $value = null)
+    public function toDatabase($value = null)
     {
         return is_numeric($value)
             ? DateTime::createFromFormat('H:i:s', $value)->format('H:i:s')
@@ -130,29 +199,27 @@ class TimeCast extends Cast
 
 class StringCast extends Cast
 {
-    public function fromDatabase($key, $value = null)
+    public function fromDatabase($value = null)
     {
         return str_split($value);
     }
 
-    public function toDatabase($key, $value = null)
+    public function toDatabase($value = null)
     {
-        return is_array($value)
-            ? implode('', $value)
-            : $value;
+        return implode('', $value);
     }
 }
 
 class NumberCast extends Cast
 {
-    protected $keyType = 'double';
+    public static $databaseKeyType = 'double';
 
-    public function fromDatabase($key, $value = null)
+    public function fromDatabase($value = null)
     {
         return $value / 100;
     }
 
-    public function toDatabase($key, $value = null)
+    public function toDatabase($value = null)
     {
         return $value;
     }
@@ -160,12 +227,12 @@ class NumberCast extends Cast
 
 class NullCast extends Cast
 {
-    public function fromDatabase($key, $value = null)
+    public function fromDatabase($value = null)
     {
         return $value;
     }
 
-    public function toDatabase($key, $value = null)
+    public function toDatabase($value = null)
     {
         return $value;
     }
@@ -173,46 +240,31 @@ class NullCast extends Cast
 
 class NullChangedCast extends Cast
 {
-    public function fromDatabase($key, $value = null)
+    public function fromDatabase($value = null)
     {
         return 'foo';
     }
 
-    public function toDatabase($key, $value = null)
+    public function toDatabase($value = null)
     {
         return $value;
     }
 }
 
-class AddressCast extends Cast implements Jsonable
+class AddressCast extends Cast
 {
-    public $line_one;
+    public static $databaseKeyType = 'object';
 
-    public $line_two;
-
-    protected $keyType = 'object';
-
-    public function fromDatabase($key, $value = null)
-    {
-        $this->line_one = $value->line_one;
-        $this->line_two = $value->line_two;
-
-        return $this;
-    }
-
-    public function toDatabase($key, $value = null)
-    {
-        $this->line_one = $value->line_one ?? null;
-        $this->line_two = $value->line_two ?? null;
-
-        return $this;
-    }
-
-    public function toJson($options = 0)
+    public function fromDatabase($value = null)
     {
         return [
-            'line_one' => $this->line_one,
-            'line_two' => $this->line_two,
+            'line_one' => $value->line_one ?? null,
+            'line_two' => $value->line_two ?? null,
         ];
+    }
+
+    public function toDatabase($value = null)
+    {
+        return $value;
     }
 }
