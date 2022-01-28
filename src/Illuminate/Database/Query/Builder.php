@@ -1161,6 +1161,61 @@ class Builder
         return $this;
     }
 
+    public function whereBetweenDate($column, array $values, $boolean = 'and', $not = false)
+    {
+        foreach ($values as &$value) {
+            if ($value instanceof DateTimeInterface) {
+                $value = $value->format('Y-m-d');
+            }
+        }
+
+        return $this->addBetweenDateBasedWhere('Date', $column, $values, $boolean, $not);
+    }
+
+    public function whereBetweenYear($column, array $values, $boolean = 'and', $not = false)
+    {
+        foreach ($values as &$value) {
+            if ($value instanceof DateTimeInterface) {
+                $value = $value->format('Y');
+            }
+        }
+
+        return $this->addBetweenDateBasedWhere('Year', $column, $values, $boolean, $not);
+    }
+
+    public function whereBetweenMonth($column, array $values, $boolean = 'and', $not = false)
+    {
+        foreach ($values as &$value) {
+            if ($value instanceof DateTimeInterface) {
+                $value = $value->format('m');
+            }
+        }
+
+        return $this->addBetweenDateBasedWhere('Month', $column, $values, $boolean, $not);
+    }
+
+    public function whereBetweenDay($column, array $values, $boolean = 'and', $not = false)
+    {
+        foreach ($values as &$value) {
+            if ($value instanceof DateTimeInterface) {
+                $value = $value->format('d');
+            }
+        }
+
+        return $this->addBetweenDateBasedWhere('Day', $column, $values, $boolean, $not);
+    }
+
+    public function whereBetweenTime($column, array $values, $boolean = 'and', $not = false)
+    {
+        foreach ($values as &$value) {
+            if ($value instanceof DateTimeInterface) {
+                $value = $value->format('H:i:s');
+            }
+        }
+
+        return $this->addBetweenDateBasedWhere('Time', $column, $values, $boolean, $not);
+    }
+
     /**
      * Add a where between statement using columns to the query.
      *
@@ -1494,6 +1549,19 @@ class Builder
         if (! $value instanceof Expression) {
             $this->addBinding($value, 'where');
         }
+
+        return $this;
+    }
+
+    protected function addBetweenDateBasedWhere($cast, $column, $values, $boolean = 'and', $not = false)
+    {
+        $column = 'cast([' . $column . '] as ' . $cast . ')';
+
+        $type = 'between';
+
+        $this->wheres[] = compact('type', 'cast', 'column', 'values', 'boolean', 'not');
+
+        $this->addBinding(array_slice($this->cleanBindings(Arr::flatten($values)), 0, 2), 'where');
 
         return $this;
     }

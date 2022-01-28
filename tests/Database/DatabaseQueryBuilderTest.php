@@ -653,30 +653,80 @@ class DatabaseQueryBuilderTest extends TestCase
 
     public function testWhereBetweens()
     {
+        //$builder = $this->getBuilder();
+        //$builder->select('*')->from('users')->whereBetween('id', [1, 2]);
+        //$this->assertSame('select * from "users" where "id" between ? and ?', $builder->toSql());
+        //$this->assertEquals([0 => 1, 1 => 2], $builder->getBindings());
+        //
+        //$builder = $this->getBuilder();
+        //$builder->select('*')->from('users')->whereBetween('id', [[1, 2, 3]]);
+        //$this->assertSame('select * from "users" where "id" between ? and ?', $builder->toSql());
+        //$this->assertEquals([0 => 1, 1 => 2], $builder->getBindings());
+        //
+        //$builder = $this->getBuilder();
+        //$builder->select('*')->from('users')->whereBetween('id', [[1], [2, 3]]);
+        //$this->assertSame('select * from "users" where "id" between ? and ?', $builder->toSql());
+        //$this->assertEquals([0 => 1, 1 => 2], $builder->getBindings());
+        //
+        //$builder = $this->getBuilder();
+        //$builder->select('*')->from('users')->whereNotBetween('id', [1, 2]);
+        //$this->assertSame('select * from "users" where "id" not between ? and ?', $builder->toSql());
+        //$this->assertEquals([0 => 1, 1 => 2], $builder->getBindings());
+        //
+        //$builder = $this->getBuilder();
+        //$builder->select('*')->from('users')->whereBetween('id', [new Raw(1), new Raw(2)]);
+        //$this->assertSame('select * from "users" where "id" between 1 and 2', $builder->toSql());
+        //$this->assertEquals([], $builder->getBindings());
+
         $builder = $this->getBuilder();
-        $builder->select('*')->from('users')->whereBetween('id', [1, 2]);
-        $this->assertSame('select * from "users" where "id" between ? and ?', $builder->toSql());
+        $builder->select('*')->from('users')->whereBetweenDate('created_at', [1, 2]);
+        $this->assertSame('select * from "users" where cast([created_at] as date) between ? and ?', $builder->toSql());
         $this->assertEquals([0 => 1, 1 => 2], $builder->getBindings());
 
         $builder = $this->getBuilder();
-        $builder->select('*')->from('users')->whereBetween('id', [[1, 2, 3]]);
-        $this->assertSame('select * from "users" where "id" between ? and ?', $builder->toSql());
+        $builder->select('*')->from('users')->whereNotBetweenDate('created_at', [1, 2]);
+        $this->assertSame('select * from "users" where cast([created_at] as date) not between ? and ?', $builder->toSql());
         $this->assertEquals([0 => 1, 1 => 2], $builder->getBindings());
 
         $builder = $this->getBuilder();
-        $builder->select('*')->from('users')->whereBetween('id', [[1], [2, 3]]);
-        $this->assertSame('select * from "users" where "id" between ? and ?', $builder->toSql());
+        $builder->select('*')->from('users')->whereBetweenYear('created_at', [1, 2]);
+        $this->assertSame('select * from "users" where cast([created_at] as year) between ? and ?', $builder->toSql());
         $this->assertEquals([0 => 1, 1 => 2], $builder->getBindings());
 
         $builder = $this->getBuilder();
-        $builder->select('*')->from('users')->whereNotBetween('id', [1, 2]);
-        $this->assertSame('select * from "users" where "id" not between ? and ?', $builder->toSql());
+        $builder->select('*')->from('users')->whereNotBetweenYear('created_at', [1, 2]);
+        $this->assertSame('select * from "users" where cast([created_at] as year) not between ? and ?', $builder->toSql());
         $this->assertEquals([0 => 1, 1 => 2], $builder->getBindings());
 
         $builder = $this->getBuilder();
-        $builder->select('*')->from('users')->whereBetween('id', [new Raw(1), new Raw(2)]);
-        $this->assertSame('select * from "users" where "id" between 1 and 2', $builder->toSql());
-        $this->assertEquals([], $builder->getBindings());
+        $builder->select('*')->from('users')->whereBetweenMonth('created_at', [1, 2]);
+        $this->assertSame('select * from "users" where cast([created_at] as month) between ? and ?', $builder->toSql());
+        $this->assertEquals([0 => 1, 1 => 2], $builder->getBindings());
+
+        $builder = $this->getBuilder();
+        $builder->select('*')->from('users')->whereNotBetweenMonth('created_at', [1, 2]);
+        $this->assertSame('select * from "users" where cast([created_at] as month) not between ? and ?', $builder->toSql());
+        $this->assertEquals([0 => 1, 1 => 2], $builder->getBindings());
+
+        $builder = $this->getBuilder();
+        $builder->select('*')->from('users')->whereBetweenDay('created_at', [1, 2]);
+        $this->assertSame('select * from "users" where cast([created_at] as day) between ? and ?', $builder->toSql());
+        $this->assertEquals([0 => 1, 1 => 2], $builder->getBindings());
+
+        $builder = $this->getBuilder();
+        $builder->select('*')->from('users')->whereNotBetweenDay('created_at', [1, 2]);
+        $this->assertSame('select * from "users" where cast([created_at] as day) not between ? and ?', $builder->toSql());
+        $this->assertEquals([0 => 1, 1 => 2], $builder->getBindings());
+
+        $builder = $this->getBuilder();
+        $builder->select('*')->from('users')->whereBetweenTime('created_at', [1, 2]);
+        $this->assertSame('select * from "users" where cast([created_at] as time) between ? and ?', $builder->toSql());
+        $this->assertEquals([0 => 1, 1 => 2], $builder->getBindings());
+
+        $builder = $this->getBuilder();
+        $builder->select('*')->from('users')->whereNotBetweenTime('created_at', [1, 2]);
+        $this->assertSame('select * from "users" where cast([created_at] as time) not between ? and ?', $builder->toSql());
+        $this->assertEquals([0 => 1, 1 => 2], $builder->getBindings());
     }
 
     public function testWhereBetweenColumns()

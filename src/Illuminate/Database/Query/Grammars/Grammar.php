@@ -406,6 +406,31 @@ class Grammar extends BaseGrammar
         return $this->wrap($where['column']).' '.$between.' '.$min.' and '.$max;
     }
 
+    protected function whereBetweenDate(Builder $query, $where)
+    {
+        return $this->betweenDateBasedWhere('date', $query, $where);
+    }
+
+    protected function whereBetweenYear(Builder $query, $where)
+    {
+        return $this->betweenDateBasedWhere('year', $query, $where);
+    }
+
+    protected function whereBetweenMonth(Builder $query, $where)
+    {
+        return $this->betweenDateBasedWhere('month', $query, $where);
+    }
+
+    protected function whereBetweenDay(Builder $query, $where)
+    {
+        return $this->betweenDateBasedWhere('day', $query, $where);
+    }
+
+    protected function whereBetweenTime(Builder $query, $where)
+    {
+        return $this->betweenDateBasedWhere('time', $query, $where);
+    }
+
     /**
      * Compile a "where date" clause.
      *
@@ -479,6 +504,17 @@ class Grammar extends BaseGrammar
         $value = $this->parameter($where['value']);
 
         return $type.'('.$this->wrap($where['column']).') '.$where['operator'].' '.$value;
+    }
+
+    protected function betweenDateBasedWhere($type, Builder $query, $where)
+    {
+        $between = $where['not'] ? 'not between' : 'between';
+
+        $min = $this->parameter(reset($where['values']));
+
+        $max = $this->parameter(end($where['values']));
+
+        return 'cast('.$this->wrap($where['column']).' as '.$type.') '.$between.' '.$min.' and '.$max;
     }
 
     /**
